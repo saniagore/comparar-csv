@@ -1,0 +1,117 @@
+import csv
+from itertools import zip_longest
+import os
+
+nueva = {"maxima":[], "debe": []}
+busqueda = {"cedula": [], "curso": []}
+
+with open('prueba.csv', newline='') as csvfile:
+    # Lee el archivo CSV
+    reader = csv.reader(csvfile, delimiter=';')  
+    # Itera sobre cada fila del archivo
+    for row in reader:
+        # La cédula está en la primera columna y el curso en la segunda
+        cedula = row[0]
+        curso = row[1]
+        # Almacena la información en el diccionario
+        busqueda['cedula'].append(cedula)
+        busqueda['curso'].append(curso)
+
+bbdd = {"cedula": [], "curso": [], "nota": []}
+
+with open('bbdd.csv', newline='') as csvfile:
+    # Lee el archivo CSV
+    reader = csv.reader(csvfile, delimiter=';')  
+    # Itera sobre cada fila del archivo
+    for row in reader:
+        # La cédula está en la primera columna y el curso en la segunda
+        cedula = row[7]
+        curso = row[3]
+        nota = row[14]
+        # Almacena la información en el diccionario
+        bbdd['cedula'].append(cedula)
+        bbdd['curso'].append(curso)
+        bbdd['nota'].append(nota)
+
+
+####################################################################################################################
+
+notas_correspondientes = []
+for i in range(len(busqueda['cedula'])):
+    cedula_busqueda = busqueda['cedula'][i].strip().lower()
+    curso_busqueda = busqueda['curso'][i].strip().lower()
+    notas_encontradas = []  # Almacena todas las notas correspondientes a la cédula y curso actual
+    for j in range(len(bbdd['cedula'])):
+        cedula_bbbd = bbdd['cedula'][j].strip().lower()
+        curso_bbbd = bbdd['curso'][j].strip().lower()
+        if cedula_busqueda == cedula_bbbd and curso_busqueda == curso_bbbd:
+            nota = bbdd['nota'][j]
+            if nota != '-':
+                notas_encontradas.append(int(nota))  # Convertimos la nota a entero y la agregamos a las notas encontradas
+    if notas_encontradas:
+        # Si se encontraron notas para la cédula y el curso actual, agregamos la nota más alta
+        notas_correspondientes.append(max(notas_encontradas))
+    else:
+        #print("No se encontraron notas para cédula:", busqueda['cedula'][i], "y curso:", busqueda['curso'][i])
+        # Si no se encontraron notas, agregamos 0
+        notas_correspondientes.append(0)
+        notas_encontradas.append("")
+
+    try:
+        maxima = max(notas_encontradas)
+    except ValueError:
+        pass
+    #print("Notas encontradas para cédula:", busqueda['cedula'][i], "y curso:", busqueda['curso'][i], ":", notas_encontradas)
+    nueva["maxima"].append(maxima)
+
+####################################################################################################################
+
+final = {"cedula": [], "curso": [], "nota": [], "Necesita?": []}
+with open('prueba.csv', newline='') as csvfile:
+    # Lee el archivo CSV
+    reader = csv.reader(csvfile, delimiter=';')  
+    # Itera sobre cada fila del archivo
+    for row in reader:
+        # La cédula está en la primera columna y el curso en la segunda
+        cedula = row[0]
+        curso = row[1]
+        # Almacena la información en el diccionario
+        final['cedula'].append(cedula)
+        final['curso'].append(curso)
+        # Aquí agregamos solo el elemento correspondiente de notas_correspondientes
+        final["nota"].append(notas_correspondientes.pop(0))
+
+####################################################################################################################
+
+
+notas= final["nota"]
+for nota in notas:
+    if nota>=80:
+        debe = "No"
+        nueva['debe'].append(debe)
+        final['Necesita?'].append(debe)
+    elif nota<80:
+        debe = "Si"
+        nueva['debe'].append(debe)
+        final['Necesita?'].append(debe)
+
+####################################################################################################################
+
+with open('prueba.csv', newline='') as csvfile:
+    reader = csv.reader(csvfile, delimiter=';')
+    filas_modificadas = []
+    for i, row in enumerate(reader):
+        if i < len(nueva["maxima"]):  # Comprueba si hay suficientes elementos en el diccionario para agregar
+            maxima = str(nueva["maxima"][i])  # Obtiene el valor correspondiente del diccionario para la columna E
+            debe = nueva["debe"][i]           # Obtiene el valor correspondiente del diccionario para la columna F
+            row.append(maxima)  # Agrega la nueva información a la columna E
+            row.append(debe)    # Agrega la nueva información a la columna F
+        filas_modificadas.append(row)
+
+# Ahora puedes escribir las filas modificadas en un nuevo archivo CSV
+with open('nuevo_prueba.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile, delimiter=';')
+    for row in filas_modificadas:
+        writer.writerow(row)
+
+print("Se ha creado un nuevo archivo 'nuevo_prueba.csv'")
